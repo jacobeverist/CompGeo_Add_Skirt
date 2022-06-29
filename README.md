@@ -1,57 +1,177 @@
-# CompGeo_Add_Skirt
-## Objective
-Modify a shape, a 3D geometry, so that it can be "formed" using our Dual Sided Incremental Forming (DSIF) process. 
-<p align="center"><img src=https://user-images.githubusercontent.com/91622575/174198770-e7d3b0c8-156c-4757-8b05-1a29f07e73e5.png></p>
+# CompGeo_Add_Skirt Challenge
 
-## Context
-At Machina Labs, we use our robots to push, stretch, bend and fold flat sheets of metal into various shapes. This "forming" process results in the originally flat sheet of metal, now having a 3D shape protruding out of it. Typically, the desired "part" is only a portion of the protruding shape, and which eventually gets cut out of it. 
-<p align="center"><img src=https://user-images.githubusercontent.com/91622575/174198462-d68516ca-4f35-4b5a-b535-1a319c6571ba.png></p>
+---
+
+# Purpose
+This README explains the approach I would use to solve the [CompGeo_Add_Skirt challenge](https://github.com/Machina-Labs/CompGeo_Add_Skirt).  Implementation would entail a lot of work beyond 2-4 hours so we just outline our development approach instead.
 
 
-To be "formable" or manufacturable using our DSIF process, the geometry must resemble a protrusion off a flat surface. In other words, all its edges or the entire perimeter of the geometry must lie in a single plane. Typically however, the parts required by our clients do not satisfy this requirement! So, in order to make it manufacturable, the "part" geometry provided to us by clients must be adapted. The process of adapting the given geometry is to first, reorient the geometry to be optimal for the following steps. Next, project edges of the geometry onto a flat surface. This creates extension surfaces with perimeter ending in a single plane. The edges thus extended with the new surfaces, fulfil the criteria of being a protrusion. However, this surface will need additional modifications as explained below. Such an extension surface is what we call a "skirt" - for obvious reasons.
-<p align="center"><img src=https://user-images.githubusercontent.com/91622575/174199005-22c1a9ef-db98-4096-b50f-51f5c8893031.png></p>
-<p align="center"><img src=https://user-images.githubusercontent.com/91622575/174199072-42ceecb8-fc4c-4504-9f33-cdafa2a7327d.png></p>
+# Approach
+Solving and coding computational geometry problems are particularly difficult because they are very prone to pernicious and undetectable errors during development.  Because of this, care must be taken during development to break down the solution into pieces and build upon solid foundations.  Furthermore, checking the validity of your data at each intermediate step of your solution helps isolate and diagnose errors.
+
+The solution should be built on a foundation of valid assumptions and mathematically correct algorithms.  Given this foundation, heuristic solutions can then be applied with relative freedom since we can have confidence that the foundational code and data is correct and reliable.
+
+Therefore, it makes sense to spend a lot of time analyzing and planning how to approach the problem.  We break down the problem into the below components.
+
+## Definitions
+- Define any special terms being used (vertex, edge, face, perimeter, etc.)
+- Define the problem
+- Define input
+- Define output
+- Define any constraints
+- Define optimality
+
+## Assumptions
+- Collect any assumptions that are stated or hidden with the problem statement
+- Add further assumptions to reduce the scope of your problem to something manageable
+- Add assumptions at each intermediate step of your solution
+
+## Validation Functions
+- Create functions to check the validity of each assumption.  
+- Apply appropriate validation function to each step of the algorithm
+
+## Correct Algorithms
+- Create a library of primitive functions that are "correct" under the given assumptions
+- Should be mathematically correct with a written proof
+- Use software libraries or literature proofs as much as possible
+- Avoid writing your own proofs since that's a rabbit hole you don't need to go down
+
+## Heuristics
+- Develop heuristic solutions with correct primitives and valid data.
+- Optimize solution based on desired constraints
+- Humans evaluate effectiveness of solution visually
+
+---
+
+# Solution
+
+The components of our solution are described below.
+
+## Definitions
+
+### Problem
+At the high level, the problem is taking in an input STL file, adding a skirt to the mesh representing the part, and outputing a new STL file.
+ 
+
+### Terms
+A **vertex** is a point in 3D cartesian space.  An **edge** is a line segment defined by two vertices.  A **face** is a triangle (for this problem) defined by 3 edges that form a cycle.
+
+A **mesh** is a collection of vertices, edges, and faces.  The original mesh is denoted $M_1$.
+
+A **perimeter** is a cycle of edges that are each adjacent to only one face.  It follows that every vertex on a perimeter is adjacent to two faces.  The perimeter of $M_1$ is denoted $C_1$.  Every vertex on a perimeter is connected to at least 3 edges (is this true?).
+
+The **skirt** is an appendage of mesh, $M_2$, along the perimeter $C_1$, that terminates on the z=0 plane.  The resulting composite mesh, $M_3$ has a new perimeter $C_3$ completely on the z=0 plane.    
+
+The **wall angle** is the angle between a face on the skirt perimeter $C_3$ and the z=0 plane.
+
+The **skirt angle** is the angle between the mesh $M_1$ and the skirt $M_2$ along a face on the perimeter $C_1$.
+
+A **ray** is part of a line with a starting point but no ending point.  It is defined by an origin and a direction.
+
+### Constraints
+- The new perimeter $C_3$ will be located on the z=0 plane.
+- The wall angle will be $\leq 70$ degrees.
+
+### Optimality
+Although not specified, we claim the following metrics should be minimized to create an optimal solution.
+
+- The mesh should be centered in the neighborhood of the z-axis. 
+- The wall angle should be minimized.
+- The skirt angle should be minimized.  ($0$ degrees is acceptable)
+- The surface area of the skirt should be minimized.
 
 
-In addition to its perimeter lying in a single plane, an ideal manufacturable surface typically has a draft, or is slanted less than 90 degrees towards the plane. Typically the transition from part surface to extended surface, over the original edge, causes a change in direction. For manufacturability, it is best for the newly added skirt surface to extend smoothly beyond the edge of the orignal part. Often this can be achieved by orienting the part optimally before extending its edges. As such, to be manufacturable, there are several other requirements and constraints - but those are beyond the scope of this assignment.
-## Task
-Create a program that...
-- Takes in a 3D geometry in form of a .STL file. Use provided file - part.STL.
-- Programmatically adds a "skirt" to the provided 3D geometry.
-- Outputs a new .STL file - part_skirted.STL.
-## Constraints, Assumptions and Terminology
-- There are several shapes which are impossible to form, and are assumed not to be used as input. Some examples are...
-  * Shapes that form a closed volume - a sphere,
-  * Shapes with intersecting planes,
-  * Mobius strip, etc.
-- To understand the requirements below, assume the part to be in a 3D cartesian co-ordinate space, with the part entirely in negative z space (the convention we use).
-- Once the part is skirted, its new perimeter, formed by extending the edges is located in the z=0 plane.
-- Imagine the new skirt to be a slanting wall falling from the z=0 plane. The acute angle this wall makes with the z=0 plane will be referred to as the "wall-angle" and will be a constrained value. 
-- The edges shown in images here are filleted - another requirement of manufacturable geometries. But you can ignore this requirement and create edges without fillets.
-## Requirements
-- The program can be a simple command line script, or optionally include a user-friendly GUI.
-- Develop using your language of choice (we prefer Python).
-- Constraint: The newly added surfaces will have a wall-angle no greater than 70 degrees with respect to the z=0 plane.
-- The provided geometry (part.STL) may be re-oriented using your choice of CAD tools, before being used as input to your program.
-- The deliverables must include documentation and all artifacts necessary to setup and run the program.
-- To enable review, deliverables must include code - not just executables. And per good programming practices, must be sufficiently documented for ease of understanding.
-## Optional Challenge (any or all of the features for bonus points)
-- Update your program to accept any .STL file (limited by the constraints described above) and output a skirted geometry.
-- Create a GUI that includes display windows to visualize the input and output 3D geometries.
-- Make the visualization window interactive, allowing user to manipulate the geometry displayed in the window.
-- Allow user to re-orient and update the input geometry.
-- Add user controls so the constraints can be adjusted and applied to update output geometry.
-## Submission
-In order to submit the assignment, do the following:
+## Assumptions
 
-1. Navigate to GitHub's project import page: [https://github.com/new/import](https://github.com/new/import)
+### Stated in Problem
+We assume the input STL file is valid and well-formed.
 
-2. In the box titled "Your old repository's clone URL", paste the homework repository's link: [https://github.com/Machina-Labs/CompGeo_Add_Skirt](https://github.com/Machina-Labs/CompGeo_Add_Skirt)
+We assume all vertices are in the negative z space.
 
-3. In the box titled "Repository Name", add a name for your local homework (ex. `Add_skirt_soln`)
+We assume the input mesh is well-formed with the following properties:
+- each face is a triangle
+- each vertex has at least 2 connected edges
+- each edge has at least one adjacent face
+- no duplicate vertices, edges, or faces
+- no edge intersects another edge
+- no face intersects another face
 
-4. Set privacy level to "Public", then click "Begin Import" button at bottom of the page.
+### Scope Reduction
+We assume the input mesh has at least one perimeter.   To simplify the problem, we also assume that the mesh has only one perimeter.  That is, we assume that there are no holes in the input mesh.  In the future we would consider parts with holes.
 
-5. Develop your homework solution in the cloned repository and push it to Github when you're done. Extra points for good Git hygiene.
+We assume we have infinite material for the skirt.   For this case, we do not consider limitations of the material size or operational space.  Therefore, there is no limitation of vertices in the x and y direction.
 
-6. Send us the link to your repository.
+
+### Intermediate 
+- We assume that the new skirt perimeter $C_3$ is contained on the z=0 plane. 
+
+
+## Validation Functions
+We will need the following functions to validate the data prior to algorithmic operations:
+
+### Initial
+- Function to validate well-formed STL
+- Function to validate input mesh is well-formed
+- Function to validate vertices are all $\leq 0$ along z-axis
+- Function to validate there is one and only one perimeter
+
+### Intermediate
+- Function to validate that the skirt perimeter is on the z=0 plane
+
+## Correct Algorithms
+
+### Custom Algorithms
+We will need the following correct primitive function:
+- Retrieve the perimeter of a mesh
+- Translate mesh
+- Rotate mesh about an origin 
+- Find plane defined by origin and two vectors
+- Find intersection point between a ray and plane
+- Rotate a ray along a plane
+
+### Libraries
+We can use CGAL or libigl for data structures and classical computaional geometry algorithms.
+
+## Heuristics
+
+We propose the following heuristic operations to solve the skirt problem:
+
+### Center the Part
+- Translate the mesh in the x-y direction so that it is centered along the z-axis.
+
+### Orient the Part
+- Create a set of rays $R_1$ such that their origins are the center points of the edges on the perimeter $C_1$, are perpendicular to the edges, and are coplanar to the each edge's adjacent face.  .
+- Rotate the mesh such that the maximum number of rays in $R_1$ intersect the z=0 plane and that the length between each ray's origin and its intersection point is minimized.
+
+### Create an Infinite Skirt
+- For each vertex $v_i$ on the perimeter $M_1$ with adjacent edges $e_i$ and $e_{i+1}$, create a set of rays $R_2$ with origins $v_i$ and the direction being the sum of directions of $e_i$ and $e_{i+1}$ into $v_1$.
+
+### Connect Skirt to z=0 Plane
+- Rotate each ray $r_i$ in $R_2$ along the plane defined by the vector of $r_i$ and the normal $n_i$ of the plane defined by $e_i$ and $e_{i+1}$.
+- Rotate until $r_i$ intersects z=0 plane, and that the angle between $r_1$ and z=0 plane is less than $70$ degrees.  
+
+### Create Extension Mesh
+- Create vertices $w_i$ from the intersection point of the rays in $R_1$ with z=0 plane.
+- Create edges defined by the origin vertex $v_i$ of a ray $r_i$ and its corresponding intersection vertex $w_i$
+- Create perimeter edges defined by $w_i$ and $w_{i+1}$ along z=0 plane in same order as the $C_1$ perimeter vertices
+- Create edge between $v_i$ and $w_{i+1}$ to form two triangle faces from rectangle.
+- New skirt perimeter $C_3$ is defined by vertices $w_i$ and edges defined by $w_i$ and $w_{i+1}$.
+- Validate skirt perimeter is on z=0 plane.
+
+## Discussion
+This solution ensures wall angle constraint is met but doesn't consider any factors such as smoothness, ease of manufacturability, material usage, operational space, or skirt angle.
+
+We have determined correctness of the solution since the problem is currently not mathematically well-defined.  Suitability of the solutions generated will need to be determined by human evaluation.
+
+Errors in the approach may exist and will need to be discovered after coding.  Debugging will be easier given the foundations of correctness and validated data.
+
+
+
+
+
+
+
+
+
+
+
