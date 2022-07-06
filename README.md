@@ -2,6 +2,13 @@
 
 ---
 
+# Code
+`visualize_stl.py`: Visual a mesh with an interactive web plot
+
+`find_perimeter.py`: Find perimeter edges of the mesh
+
+`other_functions.py`: Functions we'll need soon (face normals, local basis, adjacency matrix)
+
 # Purpose
 This README explains the approach I would use to solve the [CompGeo_Add_Skirt challenge](https://github.com/Machina-Labs/CompGeo_Add_Skirt).  Implementation would entail a lot of work beyond 2-4 hours so we just outline our development approach instead.
 
